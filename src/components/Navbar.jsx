@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { theme, toggleTheme, mounted } = useTheme();
+
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -56,6 +59,23 @@ export default function Navbar() {
 
           {/* Right Action Menu / Profile */}
           <div className="hidden md:flex items-center space-x-4">
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all duration-300 cursor-pointer"
+                aria-label="Toggle Theme"
+              >
+                {theme === "dark" ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-amber-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21M5.197 5.197l1.591 1.591M17.213 17.213l1.591 1.591M3 12h2.25m13.5 0H21M5.197 18.803l1.591-1.591M17.213 6.697l1.591-1.591M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-zinc-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                  </svg>
+                )}
+              </button>
+            )}
             <button className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors duration-200">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
@@ -109,7 +129,18 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <div className="pt-4 pb-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3">
+          {mounted && (
+            <div className="pt-4 pb-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Dark Theme</span>
+              <button
+                onClick={toggleTheme}
+                className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-semibold text-zinc-700 dark:text-zinc-300 shadow-sm cursor-pointer"
+              >
+                {theme === "dark" ? "Enabled 🌙" : "Disabled ☀️"}
+              </button>
+            </div>
+          )}
+          <div className="pt-2 pb-2 flex items-center justify-between px-3">
             <span className="text-sm text-zinc-500">Notifications</span>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           </div>
