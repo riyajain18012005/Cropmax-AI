@@ -1,0 +1,591 @@
+{
+  "info": {
+    "_postman_id": "8c599187-578d-4e94-bd06-d24ff9bfca26",
+    "name": "CropMax AI REST API",
+    "description": "API collection for testing and verifying CropMax AI backend services including Crop CRUD, Search, and Analytics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Health Status UP",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/health",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"status\": \"UP\",\n  \"message\": \"CropMax AI Backend Service is running smoothly.\",\n  \"timestamp\": \"2026-06-28T11:12:00.000Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Crops",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Successful Crops List Retrieval",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n  {\n    \"id\": \"1\",\n    \"name\": \"Mango\",\n    \"quantity\": 15,\n    \"unit\": \"Quintals\",\n    \"location\": \"Nashik, Maharashtra\",\n    \"status\": \"Processing Recommended\",\n    \"advice\": \"Convert to Mango Pulp/Pickle/Juice. Local processor price spreads show a (+88% profit) increase compared to fresh market value.\"\n  },\n  {\n    \"id\": \"2\",\n    \"name\": \"Tomato\",\n    \"quantity\": 8,\n    \"unit\": \"Quintals\",\n    \"location\": \"Kolar, Karnataka\",\n    \"status\": \"Hold Recommended\",\n    \"advice\": \"Hold Tomato for 3 weeks. APMC wholesale arrivals are peaking in neighboring districts; prices are projected to rise by 25% once gluts clear.\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Single Crop (Found)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "1"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crop Retrieval Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": \"1\",\n  \"name\": \"Mango\",\n  \"quantity\": 15,\n  \"unit\": \"Quintals\",\n  \"location\": \"Nashik, Maharashtra\",\n  \"status\": \"Processing Recommended\",\n  \"advice\": \"Convert to Mango Pulp/Pickle/Juice. Local processor price spreads show a (+88% profit) increase compared to fresh market value.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Single Crop (Not Found)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops/999",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "999"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crop Not Found Error",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "999"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"error\": {\n    \"status\": 404,\n    \"message\": \"Crop with ID 999 not found\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Crop (Processing Recommended)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Potato\",\n  \"quantity\": 12,\n  \"unit\": \"Quintals\",\n  \"location\": \"Indore, Madhya Pradesh\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/crops",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crop Created Successfully",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Potato\",\n  \"quantity\": 12,\n  \"unit\": \"Quintals\",\n  \"location\": \"Indore, Madhya Pradesh\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/crops",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": \"1719572000000\",\n  \"name\": \"Potato\",\n  \"quantity\": 12,\n  \"unit\": \"Quintals\",\n  \"location\": \"Indore, Madhya Pradesh\",\n  \"status\": \"Processing Recommended\",\n  \"advice\": \"Process your 12 Quintals of Potato into dehydration starch or premium chips at local processors near Indore to boost gross margins by 60%.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Crop (Validation Failure)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"quantity\": 0,\n  \"unit\": \"Quintals\",\n  \"location\": \"\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/crops",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Validation Error Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"quantity\": 0,\n  \"unit\": \"Quintals\",\n  \"location\": \"\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/crops",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops"
+              ]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"error\": {\n    \"status\": 400,\n    \"message\": \"Crop name cannot be empty\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Crop",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Tomato\",\n  \"quantity\": 25,\n  \"unit\": \"Quintals\",\n  \"location\": \"Kolar, Karnataka\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/crops/2",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "2"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crop Updated Successfully",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tomato\",\n  \"quantity\": 25,\n  \"unit\": \"Quintals\",\n  \"location\": \"Kolar, Karnataka\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/crops/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "2"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": \"2\",\n  \"name\": \"Tomato\",\n  \"quantity\": 25,\n  \"unit\": \"Quintals\",\n  \"location\": \"Kolar, Karnataka\",\n  \"status\": \"Processing Recommended\",\n  \"advice\": \"High moisture content makes storage risky. We recommend sending your 25 Quintals of Tomato to a tomato paste/ketchup manufacturer near Kolar, Karnataka for an estimated 75% profit increase.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Search Crops",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops/search?q=karnataka",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "karnataka"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Search Result Returns Filtered Crops",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops/search?q=karnataka",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "karnataka"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n  {\n    \"id\": \"2\",\n    \"name\": \"Tomato\",\n    \"quantity\": 8,\n    \"unit\": \"Quintals\",\n    \"location\": \"Kolar, Karnataka\",\n    \"status\": \"Hold Recommended\",\n    \"advice\": \"Hold Tomato for 3 weeks. APMC wholesale arrivals are peaking in neighboring districts; prices are projected to rise by 25% once gluts clear.\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Dashboard Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops/stats",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "stats"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Stats Calculated Successfully",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops/stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "stats"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"totalCrops\": 2,\n  \"projectedIncome\": \"₹3.45L\",\n  \"rawProjectedIncome\": 345000\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Crop",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/crops/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "crops",
+            "1"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crop Deleted Successfully",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/crops/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "crops",
+                "1"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": "json",
+          "header": [],
+          "cookie": [],
+          "body": ""
+        }
+      ]
+    }
+  ]
+}
