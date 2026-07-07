@@ -20,10 +20,11 @@ export default function Dashboard() {
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({ totalCrops: 0, projectedIncome: "₹0.00" });
+  const [editingCropId, setEditingCropId] = useState(null);
   
   // Custom DevTools Network logs simulator state
   const [networkLogs, setNetworkLogs] = useState([]);
-  const [isLogsOpen, setIsLogsOpen] = useState(true);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
   
   const toast = useToast();
 
@@ -119,8 +120,21 @@ export default function Dashboard() {
     return () => clearTimeout(timer);
   }, [searchQuery, fetchCrops]);
 
-  // Add new harvest entry
-  const handleAddCrop = async (e) => {
+  // Start editing a harvest entry
+  const handleStartEdit = (crop) => {
+    setEditingCropId(crop.id);
+    setForm({
+      name: crop.name,
+      quantity: crop.quantity,
+      unit: crop.unit,
+      location: crop.location
+    });
+    toast.info(`Editing ${crop.name} harvest. Update details and submit.`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Submit harvest form (handles both create and update)
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     // Field validations
@@ -144,11 +158,20 @@ export default function Dashboard() {
     // Reset errors and start loading spinner
     setErrors({});
     setIsAnalyzing(true);
-    toast.info("Analyzing market trends and local APMC price spreads...");
+    
+    const isEditing = !!editingCropId;
+    if (isEditing) {
+      toast.info("Updating harvest details and recalculating strategies...");
+    } else {
+      toast.info("Analyzing market trends and local APMC price spreads...");
+    }
 
     try {
-      const res = await loggedFetch(API_BASE, {
-        method: "POST",
+      const url = isEditing ? `${API_BASE}/${editingCropId}` : API_BASE;
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await loggedFetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json"
         },
@@ -162,20 +185,27 @@ export default function Dashboard() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error?.message || "Failed to analyze and save crop harvest");
+        throw new Error(errorData.error?.message || `Failed to ${isEditing ? 'update' : 'analyze'} crop harvest`);
       }
 
-      const newCrop = await res.json();
+      const savedCrop = await res.json();
       
       // Update UI state
-      setCrops((prevCrops) => [newCrop, ...prevCrops]);
+      if (isEditing) {
+        setCrops((prevCrops) => prevCrops.map((c) => c.id === editingCropId ? savedCrop : c));
+        toast.success(`Successfully updated and re-analyzed ${savedCrop.name}!`);
+        setEditingCropId(null);
+      } else {
+        setCrops((prevCrops) => [savedCrop, ...prevCrops]);
+        toast.success(`Successfully analyzed ${savedCrop.name} harvest!`);
+      }
+      
       setForm({ name: "", quantity: "", unit: "Quintals", location: "" });
-      toast.success(`Successfully analyzed ${newCrop.name} harvest!`);
       
       // Refresh aggregate metrics
       fetchStats();
     } catch (err) {
-      console.error("Create crop error:", err);
+      console.error("Submit crop error:", err);
       toast.error(err.message || "Failed to communicate harvest data with the API.");
     } finally {
       setIsAnalyzing(false);
@@ -239,10 +269,10 @@ export default function Dashboard() {
         {/* Left Form Column */}
         <div className="lg:col-span-1 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm h-fit space-y-6 transition-colors duration-300">
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center">
-            <span className="mr-2">➕</span> Add New Harvest
+            <span className="mr-2">{editingCropId ? "📝" : "➕"}</span> {editingCropId ? "Edit Harvest Entry" : "Add New Harvest"}
           </h2>
           
-          <form onSubmit={handleAddCrop} className="space-y-4">
+          <form onSubmit={handleFormSubmit} className="space-y-4">
             <Input
               label="Crop Name"
               placeholder="e.g. Tomato, Mango, Potato"
@@ -286,20 +316,36 @@ export default function Dashboard() {
               disabled={isAnalyzing}
             />
 
-            <Button
-              type="submit"
-              disabled={isAnalyzing}
-              className="w-full relative py-3.5 flex items-center justify-center gap-2"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader size="sm" className="inline-block" />
-                  Analyzing Details...
-                </>
-              ) : (
-                "Analyze with OpenAI GPT-4o"
+            <div className="flex flex-col gap-2">
+              <Button
+                type="submit"
+                disabled={isAnalyzing}
+                className="w-full relative py-3.5 flex items-center justify-center gap-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader size="sm" className="inline-block" />
+                    {editingCropId ? "Updating Details..." : "Analyzing Details..."}
+                  </>
+                ) : (
+                  editingCropId ? "Update Harvest Analysis" : "Analyze with OpenAI GPT-4o"
+                )}
+              </Button>
+              {editingCropId && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setEditingCropId(null);
+                    setForm({ name: "", quantity: "", unit: "Quintals", location: "" });
+                    toast.info("Edit cancelled.");
+                  }}
+                  className="w-full py-2.5"
+                >
+                  Cancel Edit
+                </Button>
               )}
-            </Button>
+            </div>
           </form>
         </div>
 
@@ -384,6 +430,20 @@ export default function Dashboard() {
                   actionText="View Analysis Report"
                   onClick={() => setSelectedCrop(crop)}
                 />
+                
+                {/* Dynamic Edit Button visible on Hover */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStartEdit(crop);
+                  }}
+                  title="Edit harvest entry"
+                  className="absolute top-4 right-14 z-10 p-2 rounded-xl bg-zinc-100 hover:bg-emerald-50 dark:bg-zinc-800 dark:hover:bg-emerald-950/30 text-zinc-400 hover:text-emerald-500 border border-zinc-200/40 dark:border-zinc-700/40 hover:border-emerald-200/50 dark:hover:border-emerald-900/40 opacity-0 group-hover/card:opacity-100 transition-all duration-200 cursor-pointer shadow-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                  </svg>
+                </button>
                 
                 {/* Dynamic Delete Button visible on Hover */}
                 <button

@@ -6,8 +6,93 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-// Database connection and seeding omitted for in-memory setup in Week 4
+// Database connection and seeding using Prisma (MySQL)
+const prisma = require('./prismaClient');
 
+async function seedDefaultData() {
+  try {
+    // Seed a default User if none exists
+    let defaultUser = await prisma.user.findUnique({
+      where: { email: 'farmer.john@cropmax.ai' }
+    });
+    if (!defaultUser) {
+      defaultUser = await prisma.user.create({
+        data: {
+          name: 'Farmer John',
+          email: 'farmer.john@cropmax.ai',
+          role: 'Farmer'
+        }
+      });
+      console.log('🌱 Seeded default User ID:', defaultUser.id);
+    } else {
+      console.log('🌱 Default User already exists ID:', defaultUser.id);
+    }
+
+    // Seed a default Category if none exists
+    let defaultCategory = await prisma.category.findUnique({
+      where: { name: 'General' }
+    });
+    if (!defaultCategory) {
+      defaultCategory = await prisma.category.create({
+        data: {
+          name: 'General',
+          description: 'General category for crops'
+        }
+      });
+      console.log('🌱 Seeded default Category ID:', defaultCategory.id);
+    } else {
+      console.log('🌱 Default Category already exists ID:', defaultCategory.id);
+    }
+
+    // Seed default crops if empty
+    let count = await prisma.crop.count();
+    if (count === 0) {
+      const defaultCrops = [
+        {
+          name: "Mango",
+          quantity: 15,
+          unit: "Quintals",
+          location: "Nashik, Maharashtra",
+          status: "Processing Recommended",
+          advice: "Convert to Mango Pulp/Pickle/Juice. Local processor price spreads show a (+88% profit) increase compared to fresh market value.",
+          userId: defaultUser.id,
+          categoryId: defaultCategory.id
+        },
+        {
+          name: "Tomato",
+          quantity: 8,
+          unit: "Quintals",
+          location: "Kolar, Karnataka",
+          status: "Hold Recommended",
+          advice: "Hold Tomato for 3 weeks. APMC wholesale arrivals are peaking in neighboring districts; prices are projected to rise by 25% once gluts clear.",
+          userId: defaultUser.id,
+          categoryId: defaultCategory.id
+        }
+      ];
+      await prisma.crop.createMany({
+        data: defaultCrops
+      });
+      console.log('🌱 Seeded default crops.');
+    } else {
+      console.log('🌱 Crops already contain records.');
+    }
+  } catch (error) {
+    console.error('❌ Error seeding default data:', error);
+  }
+}
+
+async function connectDB() {
+  try {
+    await prisma.$connect();
+    console.log('✅ Connected to MySQL successfully via Prisma.');
+    await seedDefaultData();
+  } catch (err) {
+    console.error('❌ Database connection error:', err.message);
+    console.log('⚠️ Running server with pending database configuration.');
+  }
+}
+
+connectDB();
 
 // Configure CORS to allow access from the frontend
 app.use(cors({

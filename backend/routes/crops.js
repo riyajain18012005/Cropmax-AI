@@ -1,27 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
-// Seeded in-memory data representing active harvests matching the Postman collection
-let crops = [
-  {
-    id: "1",
-    name: "Mango",
-    quantity: 15,
-    unit: "Quintals",
-    location: "Nashik, Maharashtra",
-    status: "Processing Recommended",
-    advice: "Convert to Mango Pulp/Pickle/Juice. Local processor price spreads show a (+88% profit) increase compared to fresh market value."
-  },
-  {
-    id: "2",
-    name: "Tomato",
-    quantity: 8,
-    unit: "Quintals",
-    location: "Kolar, Karnataka",
-    status: "Hold Recommended",
-    advice: "Hold Tomato for 3 weeks. APMC wholesale arrivals are peaking in neighboring districts; prices are projected to rise by 25% once gluts clear."
-  }
-];
+const prisma = require('../prismaClient');
 
 // Helper to generate AI recommendation status and advice
 function generateRecommendation(name, quantity, unit, location) {
@@ -58,15 +37,16 @@ function generateRecommendation(name, quantity, unit, location) {
 }
 
 // 1. GET /api/crops/stats - Calculate aggregate metrics (Must be registered BEFORE /api/crops/:id route)
-router.get('/stats', (req, res, next) => {
+router.get('/stats', async (req, res, next) => {
   try {
-    const totalCrops = crops.length;
+    const list = await prisma.crop.findMany();
+    const totalCrops = list.length;
     
     // Calculate projected income based on quantities and recommendations
-    let projectedIncome = crops.reduce((sum, crop) => {
+    let projectedIncome = list.reduce((sum, crop) => {
       let multiplier = 2000; // Base multiplier per quintal
       if (crop.unit.toLowerCase() === 'tons') multiplier = 20000;
-      if (crop.unit.toLowerCase() === 'kg') multiplier = 20;
+      if (crop.unit.toLowerCase() === 'kg') multiplier = 2; // base multiplier for kg adjusted to be reasonable
 
       const baseValue = crop.quantity * multiplier;
       const profitBoost = crop.status.includes("Processing") ? 1.55 : 1.18;
@@ -94,17 +74,25 @@ router.get('/stats', (req, res, next) => {
 });
 
 // 2. GET /api/crops/search - Search crops by name or location
-router.get('/search', (req, res, next) => {
+router.get('/search', async (req, res, next) => {
   try {
-    const query = (req.query.q || '').trim().toLowerCase();
+    const query = (req.query.q || '').trim();
     if (!query) {
-      return res.status(200).json(crops);
+      const list = await prisma.crop.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      return res.status(200).json(list);
     }
 
-    const filtered = crops.filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.location.toLowerCase().includes(query)
-    );
+    const filtered = await prisma.crop.findMany({
+      where: {
+        OR: [
+          { name: { contains: query } },
+          { location: { contains: query } }
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.status(200).json(filtered);
   } catch (error) {
@@ -113,22 +101,33 @@ router.get('/search', (req, res, next) => {
 });
 
 // 3. GET /api/crops - List all crops
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    res.status(200).json(crops);
+    const list = await prisma.crop.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json(list);
   } catch (error) {
     next(error);
   }
 });
 
 // 4. GET /api/crops/:id - Get a single crop by ID
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
-    const cropId = req.params.id;
-    const crop = crops.find(c => c.id === cropId);
+    const idVal = parseInt(req.params.id);
+    if (isNaN(idVal)) {
+      const err = new Error(`Invalid ID format: ${req.params.id}`);
+      err.status = 400;
+      return next(err);
+    }
+
+    const crop = await prisma.crop.findUnique({
+      where: { id: idVal }
+    });
     
     if (!crop) {
-      const err = new Error(`Crop with ID ${cropId} not found`);
+      const err = new Error(`Crop with ID ${req.params.id} not found`);
       err.status = 404;
       return next(err);
     }
@@ -140,7 +139,7 @@ router.get('/:id', (req, res, next) => {
 });
 
 // 5. POST /api/crops - Create a new crop harvest entry
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const { name, quantity, unit, location } = req.body;
 
@@ -167,18 +166,32 @@ router.post('/', (req, res, next) => {
     // Generate recommendation status & advice
     const { status, advice } = generateRecommendation(name, quantity, verifiedUnit, location);
 
-    const newCrop = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      quantity: Number(quantity),
-      unit: verifiedUnit,
-      location: location.trim(),
-      status,
-      advice
-    };
+    // Get seeded default User and Category
+    const defaultUser = await prisma.user.findUnique({
+      where: { email: 'farmer.john@cropmax.ai' }
+    });
+    const defaultCategory = await prisma.category.findUnique({
+      where: { name: 'General' }
+    });
 
-    // Prepend to return latest crops first
-    crops.unshift(newCrop);
+    if (!defaultUser || !defaultCategory) {
+      const err = new Error("Default database associations not seeded yet");
+      err.status = 500;
+      return next(err);
+    }
+
+    const newCrop = await prisma.crop.create({
+      data: {
+        name: name.trim(),
+        quantity: Number(quantity),
+        unit: verifiedUnit,
+        location: location.trim(),
+        status,
+        advice,
+        userId: defaultUser.id,
+        categoryId: defaultCategory.id
+      }
+    });
 
     res.status(201).json(newCrop);
   } catch (error) {
@@ -187,14 +200,12 @@ router.post('/', (req, res, next) => {
 });
 
 // 6. PUT /api/crops/:id - Update an existing crop harvest entry
-router.put('/:id', (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
-    const cropId = req.params.id;
-    const cropIndex = crops.findIndex(c => c.id === cropId);
-
-    if (cropIndex === -1) {
-      const err = new Error(`Crop with ID ${cropId} not found`);
-      err.status = 404;
+    const cropId = parseInt(req.params.id);
+    if (isNaN(cropId)) {
+      const err = new Error(`Invalid ID format: ${req.params.id}`);
+      err.status = 400;
       return next(err);
     }
 
@@ -223,37 +234,56 @@ router.put('/:id', (req, res, next) => {
     // Recalculate recommendations
     const { status, advice } = generateRecommendation(name, quantity, verifiedUnit, location);
 
-    const updatedCrop = {
-      id: cropId,
-      name: name.trim(),
-      quantity: Number(quantity),
-      unit: verifiedUnit,
-      location: location.trim(),
-      status,
-      advice
-    };
-
-    crops[cropIndex] = updatedCrop;
-    res.status(200).json(updatedCrop);
+    // Find and update document
+    try {
+      const updatedCrop = await prisma.crop.update({
+        where: { id: cropId },
+        data: {
+          name: name.trim(),
+          quantity: Number(quantity),
+          unit: verifiedUnit,
+          location: location.trim(),
+          status,
+          advice
+        }
+      });
+      res.status(200).json(updatedCrop);
+    } catch (err) {
+      if (err.code === 'P2025') {
+        const notFoundErr = new Error(`Crop with ID ${cropId} not found`);
+        notFoundErr.status = 404;
+        return next(notFoundErr);
+      }
+      throw err;
+    }
   } catch (error) {
     next(error);
   }
 });
 
 // 7. DELETE /api/crops/:id - Delete a crop harvest entry
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
-    const cropId = req.params.id;
-    const cropIndex = crops.findIndex(c => c.id === cropId);
-
-    if (cropIndex === -1) {
-      const err = new Error(`Crop with ID ${cropId} not found`);
-      err.status = 404;
+    const cropId = parseInt(req.params.id);
+    if (isNaN(cropId)) {
+      const err = new Error(`Invalid ID format: ${req.params.id}`);
+      err.status = 400;
       return next(err);
     }
 
-    crops.splice(cropIndex, 1);
-    res.status(204).send(); // 204 No Content
+    try {
+      await prisma.crop.delete({
+        where: { id: cropId }
+      });
+      res.status(204).send(); // 204 No Content
+    } catch (err) {
+      if (err.code === 'P2025') {
+        const notFoundErr = new Error(`Crop with ID ${cropId} not found`);
+        notFoundErr.status = 404;
+        return next(notFoundErr);
+      }
+      throw err;
+    }
   } catch (error) {
     next(error);
   }
