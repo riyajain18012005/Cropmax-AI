@@ -16,16 +16,28 @@ async function seedDefaultData() {
       where: { email: 'farmer.john@cropmax.ai' }
     });
     if (!defaultUser) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash('password123', 10);
       defaultUser = await prisma.user.create({
         data: {
           name: 'Farmer John',
           email: 'farmer.john@cropmax.ai',
+          password: hashedPassword,
           role: 'Farmer'
         }
       });
       console.log('🌱 Seeded default User ID:', defaultUser.id);
     } else {
       console.log('🌱 Default User already exists ID:', defaultUser.id);
+      if (!defaultUser.password) {
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash('password123', 10);
+        await prisma.user.update({
+          where: { id: defaultUser.id },
+          data: { password: hashedPassword }
+        });
+        console.log('🌱 Updated password for existing default user');
+      }
     }
 
     // Seed a default Category if none exists
@@ -123,8 +135,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Import Crop Routes
+// Import Auth and Crop Routes
+const authRouter = require('./routes/auth');
 const cropRouter = require('./routes/crops');
+app.use('/api/auth', authRouter);
 app.use('/api/crops', cropRouter);
 
 // Catch-all route for unmatched paths (404 Not Found)

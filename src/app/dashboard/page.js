@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Card from "@/components/Card";
 import { Button, Input, Modal, useToast, Loader } from "@/components/ui";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const API_BASE = "http://localhost:5000/api/crops";
 
@@ -35,6 +36,17 @@ export default function Dashboard() {
     const logId = Math.random().toString();
     const cleanUrl = url.replace("http://localhost:5000", "");
 
+    const token = localStorage.getItem("cropmax_token");
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const fetchOptions = {
+      ...options,
+      headers: {
+        ...options.headers,
+        ...authHeaders
+      }
+    };
+
     // Add entry to logs
     setNetworkLogs((prev) => [
       {
@@ -49,7 +61,7 @@ export default function Dashboard() {
     ]);
 
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, fetchOptions);
       const latency = Date.now() - startTime;
       const status = response.status;
 
@@ -242,7 +254,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 pb-48">
+    <ProtectedRoute>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 pb-48">
       {/* Header Panel */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 md:p-8 border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-6 transition-colors duration-300">
         <div>
@@ -576,6 +589,7 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
 

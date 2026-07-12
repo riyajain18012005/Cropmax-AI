@@ -4,19 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { theme, toggleTheme, mounted } = useTheme();
+  const { isAuthenticated, user, logout } = useAuth();
 
-
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "About", href: "/about" },
-    { name: "Login", href: "/login" },
-  ];
+  const navLinks = isAuthenticated
+    ? [
+        { name: "Home", href: "/" },
+        { name: "Dashboard", href: "/dashboard" },
+        { name: "Profile", href: "/profile" },
+        { name: "About", href: "/about" },
+      ]
+    : [
+        { name: "Home", href: "/" },
+        { name: "About", href: "/about" },
+        { name: "Login", href: "/login" },
+        { name: "Register", href: "/register" },
+      ];
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200/60 dark:border-zinc-800/60 transition-all duration-300">
@@ -76,19 +84,39 @@ export default function Navbar() {
                 )}
               </button>
             )}
-            <button className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors duration-200">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-              </svg>
-            </button>
-            <Link
-              href="/login"
-              className="flex items-center space-x-1 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all duration-200"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-between text-xs font-bold justify-center shadow-sm">
-                F
+
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                  Hi, <span className="font-semibold text-zinc-700 dark:text-zinc-200">{user?.name}</span>
+                </span>
+                
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-1 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                    {user?.name ? user.name[0].toUpperCase() : "U"}
+                  </div>
+                </Link>
+
+                <button
+                  onClick={logout}
+                  className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-500 hover:underline cursor-pointer"
+                >
+                  Logout
+                </button>
               </div>
-            </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center space-x-1 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-all duration-200"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-400 to-zinc-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                  G
+                </div>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -110,7 +138,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Menu Panel */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 max-h-0 ${isOpen ? "max-h-[300px] border-b border-zinc-200/50 dark:border-zinc-800/50" : ""}`}>
+      <div className={`md:hidden overflow-hidden transition-all duration-300 max-h-0 ${isOpen ? "max-h-[350px] border-b border-zinc-200/50 dark:border-zinc-800/50" : ""}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/95 dark:bg-zinc-950/95">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
@@ -140,10 +168,20 @@ export default function Navbar() {
               </button>
             </div>
           )}
-          <div className="pt-2 pb-2 flex items-center justify-between px-3">
-            <span className="text-sm text-zinc-500">Notifications</span>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
+          {isAuthenticated && (
+            <div className="pt-2 pb-2 px-3 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">Authenticated as: <span className="font-semibold">{user?.name}</span></span>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  logout();
+                }}
+                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

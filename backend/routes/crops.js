@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../prismaClient');
+const { requireAuth } = require('../middleware/auth');
 
 // Helper to generate AI recommendation status and advice
 function generateRecommendation(name, quantity, unit, location) {
@@ -36,10 +37,15 @@ function generateRecommendation(name, quantity, unit, location) {
   return { status, advice };
 }
 
+// Apply authentication middleware to all crop routes below
+router.use(requireAuth);
+
 // 1. GET /api/crops/stats - Calculate aggregate metrics (Must be registered BEFORE /api/crops/:id route)
 router.get('/stats', async (req, res, next) => {
   try {
-    const list = await prisma.crop.findMany();
+    const list = await prisma.crop.findMany({
+      where: { userId: req.user.id }
+    });
     const totalCrops = list.length;
     
     // Calculate projected income based on quantities and recommendations
@@ -79,6 +85,7 @@ router.get('/search', async (req, res, next) => {
     const query = (req.query.q || '').trim();
     if (!query) {
       const list = await prisma.crop.findMany({
+        where: { userId: req.user.id },
         orderBy: { createdAt: 'desc' }
       });
       return res.status(200).json(list);
@@ -86,6 +93,7 @@ router.get('/search', async (req, res, next) => {
 
     const filtered = await prisma.crop.findMany({
       where: {
+        userId: req.user.id,
         OR: [
           { name: { contains: query } },
           { location: { contains: query } }
@@ -104,6 +112,7 @@ router.get('/search', async (req, res, next) => {
 router.get('/', async (req, res, next) => {
   try {
     const list = await prisma.crop.findMany({
+      where: { userId: req.user.id },
       orderBy: { createdAt: 'desc' }
     });
     res.status(200).json(list);
@@ -126,7 +135,7 @@ router.get('/:id', async (req, res, next) => {
       where: { id: idVal }
     });
     
-    if (!crop) {
+    if (!crop || crop.userId !== req.user.id) {
       const err = new Error(`Crop with ID ${req.params.id} not found`);
       err.status = 404;
       return next(err);
@@ -166,16 +175,13 @@ router.post('/', async (req, res, next) => {
     // Generate recommendation status & advice
     const { status, advice } = generateRecommendation(name, quantity, verifiedUnit, location);
 
-    // Get seeded default User and Category
-    const defaultUser = await prisma.user.findUnique({
-      where: { email: 'farmer.john@cropmax.ai' }
-    });
+    // Get default Category
     const defaultCategory = await prisma.category.findUnique({
       where: { name: 'General' }
     });
 
-    if (!defaultUser || !defaultCategory) {
-      const err = new Error("Default database associations not seeded yet");
+    if (!defaultCategory) {
+      const err = new Error("Default database category associations not seeded yet");
       err.status = 500;
       return next(err);
     }
@@ -188,7 +194,7 @@ router.post('/', async (req, res, next) => {
         location: location.trim(),
         status,
         advice,
-        userId: defaultUser.id,
+        userId: req.user.id,
         categoryId: defaultCategory.id
       }
     });
@@ -231,31 +237,33 @@ router.put('/:id', async (req, res, next) => {
     const allowedUnits = ["Quintals", "Tons", "Kg"];
     const verifiedUnit = allowedUnits.includes(unit) ? unit : "Quintals";
 
+    // Check ownership
+    const crop = await prisma.crop.findUnique({
+      where: { id: cropId }
+    });
+
+    if (!crop || crop.userId !== req.user.id) {
+      const err = new Error(`Crop with ID ${cropId} not found`);
+      err.status = 404;
+      return next(err);
+    }
+
     // Recalculate recommendations
     const { status, advice } = generateRecommendation(name, quantity, verifiedUnit, location);
 
-    // Find and update document
-    try {
-      const updatedCrop = await prisma.crop.update({
-        where: { id: cropId },
-        data: {
-          name: name.trim(),
-          quantity: Number(quantity),
-          unit: verifiedUnit,
-          location: location.trim(),
-          status,
-          advice
-        }
-      });
-      res.status(200).json(updatedCrop);
-    } catch (err) {
-      if (err.code === 'P2025') {
-        const notFoundErr = new Error(`Crop with ID ${cropId} not found`);
-        notFoundErr.status = 404;
-        return next(notFoundErr);
+    // Update document
+    const updatedCrop = await prisma.crop.update({
+      where: { id: cropId },
+      data: {
+        name: name.trim(),
+        quantity: Number(quantity),
+        unit: verifiedUnit,
+        location: location.trim(),
+        status,
+        advice
       }
-      throw err;
-    }
+    });
+    res.status(200).json(updatedCrop);
   } catch (error) {
     next(error);
   }
@@ -271,19 +279,21 @@ router.delete('/:id', async (req, res, next) => {
       return next(err);
     }
 
-    try {
-      await prisma.crop.delete({
-        where: { id: cropId }
-      });
-      res.status(204).send(); // 204 No Content
-    } catch (err) {
-      if (err.code === 'P2025') {
-        const notFoundErr = new Error(`Crop with ID ${cropId} not found`);
-        notFoundErr.status = 404;
-        return next(notFoundErr);
-      }
-      throw err;
+    // Check ownership
+    const crop = await prisma.crop.findUnique({
+      where: { id: cropId }
+    });
+
+    if (!crop || crop.userId !== req.user.id) {
+      const err = new Error(`Crop with ID ${cropId} not found`);
+      err.status = 404;
+      return next(err);
     }
+
+    await prisma.crop.delete({
+      where: { id: cropId }
+    });
+    res.status(204).send(); // 204 No Content
   } catch (error) {
     next(error);
   }
