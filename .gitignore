@@ -45,3 +45,8 @@ next-env.d.ts
 
 # pdf files
 *.pdf
+
+# local files kept in workspace only
+W4_APICollection_TBI-26101097.json
+W5_SchemaDiagram_TBI-26101097.png
+
