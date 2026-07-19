@@ -138,8 +138,10 @@ app.get('/health', (req, res) => {
 // Import Auth and Crop Routes
 const authRouter = require('./routes/auth');
 const cropRouter = require('./routes/crops');
+const aiRouter = require('./routes/ai');
 app.use('/api/auth', authRouter);
 app.use('/api/crops', cropRouter);
+app.use('/api/ai', aiRouter);
 
 // Catch-all route for unmatched paths (404 Not Found)
 app.use((req, res, next) => {
