@@ -5,6 +5,52 @@ import Link from "next/link";
 import { Button, Input, Loader, useToast } from "@/components/ui";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
+function TypingText({ text, speed = 8, onComplete }) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [isFinished, setIsFinished] = useState(false);
+
+  useEffect(() => {
+    let index = 0;
+    setDisplayedText("");
+    setIsFinished(false);
+    const timer = setInterval(() => {
+      setDisplayedText((prev) => prev + text.charAt(index));
+      index++;
+      if (index >= text.length) {
+        clearInterval(timer);
+        setIsFinished(true);
+        if (onComplete) onComplete();
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [text, speed, onComplete]);
+
+  const handleSkip = () => {
+    setDisplayedText(text);
+    setIsFinished(true);
+    if (onComplete) onComplete();
+  };
+
+  return (
+    <div className="relative group">
+      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50/50 dark:bg-zinc-950/40 p-4 rounded-2xl border border-zinc-150/40 dark:border-zinc-850 whitespace-pre-wrap pr-16 min-h-[4.5rem]">
+        {displayedText}
+        {!isFinished && <span className="inline-block w-1.5 h-4 ml-1 bg-emerald-500 animate-pulse align-middle" />}
+      </p>
+      {!isFinished && (
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="absolute right-3 bottom-3 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/60 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/30 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors shadow-sm"
+        >
+          Skip Typing ⚡
+        </button>
+      )}
+    </div>
+  );
+}
+
 const API_AI = "http://localhost:5000/api/ai/advise";
 const API_CROPS = "http://localhost:5000/api/crops";
 
@@ -26,6 +72,7 @@ export default function AIAdvisor() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const [aiAdvice, setAiAdvice] = useState(null);
+  const [advisoryError, setAdvisoryError] = useState(null);
   
   // DevTools Network logs state
   const [networkLogs, setNetworkLogs] = useState([]);
@@ -152,8 +199,9 @@ export default function AIAdvisor() {
   };
 
   const handleAdvisorSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setAiAdvice(null);
+    setAdvisoryError(null);
 
     // Validate fields
     const validationErrors = {};
@@ -197,6 +245,7 @@ export default function AIAdvisor() {
       toast.success("AI advisory analysis computed successfully!");
     } catch (err) {
       console.error(err);
+      setAdvisoryError(err);
       toast.error(err.message || "Failed to communicate with AI Advisor Service.");
     } finally {
       setIsLoading(false);
@@ -396,8 +445,32 @@ export default function AIAdvisor() {
               </div>
             )}
 
+            {/* Error state overlay */}
+            {!isLoading && advisoryError && (
+              <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-rose-200 dark:border-rose-905/40 shadow-lg flex flex-col items-center justify-center text-center min-h-[450px] space-y-6 animate-fadeIn">
+                <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/20 text-rose-500 flex items-center justify-center text-3xl font-extrabold shadow-inner animate-pulse">
+                  ⚠️
+                </div>
+                <div className="space-y-2 max-w-md">
+                  <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white">Consultation Failed</h3>
+                  <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold bg-rose-50/50 dark:bg-rose-950/10 px-4 py-2.5 rounded-xl border border-rose-100/40 dark:border-rose-900/20 font-mono break-words leading-relaxed max-w-sm mx-auto">
+                    {advisoryError.message || "Failed to communicate with AI Advisor Service"}
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-450 pt-2 leading-relaxed">
+                    This might be due to API rate limits, temporary backend downtime, or missing API keys. You can simulate success by turning off 'Simulate API Error State' or clicking retry below.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleAdvisorSubmit}
+                  className="px-6 py-3 font-bold flex items-center gap-2 cursor-pointer shadow-md bg-gradient-to-r from-emerald-600 to-teal-650 text-white"
+                >
+                  Retry Consultation 🔄
+                </Button>
+              </div>
+            )}
+
             {/* Empty advisory landing screen */}
-            {!isLoading && !aiAdvice && (
+            {!isLoading && !aiAdvice && !advisoryError && (
               <div className="bg-white dark:bg-zinc-900 p-12 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-sm flex flex-col items-center justify-center text-center min-h-[450px] space-y-4">
                 <span className="text-5xl animate-bounce">🤖</span>
                 <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white">Advisor Ready</h3>
@@ -408,7 +481,7 @@ export default function AIAdvisor() {
             )}
 
             {/* AI Advice Output Display */}
-            {!isLoading && aiAdvice && (
+            {!isLoading && aiAdvice && !advisoryError && (
               <div className="space-y-6 animate-fadeIn">
                 
                 {/* Main Outcome Card */}
@@ -447,9 +520,7 @@ export default function AIAdvisor() {
                   {/* Advice Text */}
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block">AI Market Analysis & Advice</span>
-                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50/50 dark:bg-zinc-950/40 p-4 rounded-2xl border border-zinc-150/40 dark:border-zinc-850">
-                      {aiAdvice.advice}
-                    </p>
+                    <TypingText text={aiAdvice.advice} speed={8} />
                   </div>
 
                   {/* Market Sentiment */}
