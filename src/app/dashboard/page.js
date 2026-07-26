@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Card from "@/components/Card";
 import { Button, Input, Modal, useToast, Loader } from "@/components/ui";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCrop, setSelectedCrop] = useState(null);
+  const [cropToDelete, setCropToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({ totalCrops: 0, projectedIncome: "₹0.00" });
   const [editingCropId, setEditingCropId] = useState(null);
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   
   const toast = useToast();
+  const isFirstRender = useRef(true);
 
   // Intercept fetch requests to display in the custom Network DevTools drawer
   const loggedFetch = useCallback(async (url, options = {}) => {
@@ -125,12 +127,18 @@ export default function Dashboard() {
 
   // Debounced search trigger
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       fetchCrops(searchQuery);
     }, 400);
 
     return () => clearTimeout(timer);
   }, [searchQuery, fetchCrops]);
+
 
   // Start editing a harvest entry
   const handleStartEdit = (crop) => {
@@ -225,11 +233,7 @@ export default function Dashboard() {
   };
 
   // Delete harvest entry
-  const handleDeleteCrop = async (id) => {
-    if (!confirm("Are you sure you want to delete this harvest record?")) {
-      return;
-    }
-
+  const performDeleteCrop = async (id) => {
     try {
       setIsLoading(true);
       const res = await loggedFetch(`${API_BASE}/${id}`, {
@@ -462,7 +466,7 @@ export default function Dashboard() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteCrop(crop.id);
+                    setCropToDelete(crop);
                   }}
                   title="Delete harvest entry"
                   className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-zinc-100 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-500 border border-zinc-200/40 dark:border-zinc-700/40 hover:border-red-200/50 dark:hover:border-red-900/40 opacity-0 group-hover/card:opacity-100 transition-all duration-200 cursor-pointer shadow-sm"
@@ -528,6 +532,37 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!cropToDelete}
+        onClose={() => setCropToDelete(null)}
+        title="Confirm Deletion"
+      >
+        <div className="space-y-4">
+          <p className="text-zinc-650 dark:text-zinc-400 text-sm leading-relaxed">
+            Are you sure you want to delete the harvest record for <span className="font-bold text-zinc-900 dark:text-white">{cropToDelete?.name} ({cropToDelete?.quantity} {cropToDelete?.unit})</span>? This action is permanent and cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/60">
+            <Button
+              variant="secondary"
+              onClick={() => setCropToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-rose-600 hover:bg-rose-500 text-white font-medium border border-rose-500/20"
+              onClick={() => {
+                const id = cropToDelete.id;
+                setCropToDelete(null);
+                performDeleteCrop(id);
+              }}
+            >
+              Confirm Delete
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Real-time HTTP Request & Network monitor Console (DevTools simulator) */}
