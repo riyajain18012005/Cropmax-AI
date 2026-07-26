@@ -11,6 +11,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("Farmer");
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -20,8 +21,35 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) return;
+    
+    const validationErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!name.trim()) {
+      validationErrors.name = "Full name is required";
+    } else if (name.trim().length < 2) {
+      validationErrors.name = "Name must be at least 2 characters long";
+    }
+    
+    if (!email.trim()) {
+      validationErrors.email = "Email address is required";
+    } else if (!emailRegex.test(email.trim())) {
+      validationErrors.email = "Please enter a valid email address";
+    }
+    
+    if (!password) {
+      validationErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      validationErrors.password = "Password must be at least 6 characters long";
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please resolve the errors in the registration form.");
+      return;
+    }
 
+    setErrors({});
     setErrorMsg("");
     setIsSubmitting(true);
     try {
@@ -61,14 +89,13 @@ export default function Register() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-              Full Name
-            </label>
             <Input
+              label="Full Name"
               type="text"
               placeholder="Farmer John"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              error={errors.name}
               className="w-full"
               required
               disabled={isSubmitting}
@@ -76,14 +103,13 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-              Email Address
-            </label>
             <Input
+              label="Email Address"
               type="email"
               placeholder="farmer.john@cropmax.ai"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={errors.email}
               className="w-full"
               required
               disabled={isSubmitting}
@@ -91,14 +117,13 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
-              Password
-            </label>
             <Input
+              label="Password"
               type="password"
               placeholder="•••••••• (Min. 6 chars)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
               className="w-full"
               required
               disabled={isSubmitting}
@@ -106,13 +131,13 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase mb-2">
+            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
               Select Your Role
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-zinc-800 dark:text-zinc-200 transition-colors"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer"
               disabled={isSubmitting}
             >
               <option value="Farmer">Farmer (Cultivates Crops)</option>
@@ -124,7 +149,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? "Creating Account..." : "Register Now"}
           </button>
@@ -142,3 +167,4 @@ export default function Register() {
     </div>
   );
 }
+
