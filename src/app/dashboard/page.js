@@ -5,7 +5,8 @@ import Card from "@/components/Card";
 import { Button, Input, Modal, useToast, Loader } from "@/components/ui";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-const API_BASE = "http://localhost:5000/api/crops";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = `${API_URL}/api/crops`;
 
 /**
  * Farmer Dashboard page connected to the Node/Express backend REST API.
@@ -36,7 +37,7 @@ export default function Dashboard() {
     const startTime = Date.now();
     const method = options.method || "GET";
     const logId = Math.random().toString();
-    const cleanUrl = url.replace("http://localhost:5000", "");
+    const cleanUrl = url.replace(API_URL, "");
 
     const token = localStorage.getItem("cropmax_token");
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};

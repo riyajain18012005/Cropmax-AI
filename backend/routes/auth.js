@@ -10,6 +10,7 @@ const { requireAuth } = require('../middleware/auth');
 // JWT Secrets and settings
 const JWT_SECRET = process.env.JWT_SECRET || 'cropmax_super_secret_key_18012005';
 const JWT_EXPIRY = '7d';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Rate limiter for Auth endpoints
 const authLimiter = rateLimit({
@@ -262,7 +263,7 @@ router.get('/mock-consent', (req, res) => {
         </div>
 
         <div class="text-center text-xs text-zinc-400">
-          Redirects to: <span class="font-mono text-zinc-500">http://localhost:3000/auth/callback</span>
+          Redirects to: <span class="font-mono text-zinc-500">${FRONTEND_URL}/auth/callback</span>
         </div>
       </div>
 
@@ -272,7 +273,7 @@ router.get('/mock-consent', (req, res) => {
           window.location.href = \`/api/auth/mock-callback?provider=\${provider.toLowerCase()}\`;
         }
         function cancelAuth() {
-          window.location.href = "http://localhost:3000/login?error=OAuthCancelled";
+          window.location.href = "${FRONTEND_URL}/login?error=OAuthCancelled";
         }
       </script>
     </body>
@@ -344,7 +345,7 @@ router.get('/mock-callback', async (req, res, next) => {
     );
 
     // Redirect to frontend callback route with signed token
-    res.redirect(`http://localhost:3000/auth/callback?token=${token}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
   } catch (error) {
     next(error);
   }

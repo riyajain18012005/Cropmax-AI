@@ -107,8 +107,30 @@ async function connectDB() {
 connectDB();
 
 // Configure CORS to allow access from the frontend
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://cropmax-ai.vercel.app'
+];
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim().replace(/\/$/, ''));
+  envOrigins.forEach(origin => {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
+}
+
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(normalizedOrigin) || 
+        normalizedOrigin.startsWith('http://localhost:') || 
+        normalizedOrigin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'), false);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

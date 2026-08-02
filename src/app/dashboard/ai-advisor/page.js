@@ -51,8 +51,9 @@ function TypingText({ text, speed = 8, onComplete }) {
   );
 }
 
-const API_AI = "http://localhost:5000/api/ai/advise";
-const API_CROPS = "http://localhost:5000/api/crops";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_AI = `${API_URL}/api/ai/advise`;
+const API_CROPS = `${API_URL}/api/crops`;
 
 export default function AIAdvisor() {
   const [inventoryCrops, setInventoryCrops] = useState([]);
@@ -126,7 +127,7 @@ export default function AIAdvisor() {
     const startTime = Date.now();
     const method = options.method || "GET";
     const logId = Math.random().toString();
-    const cleanUrl = url.replace("http://localhost:5000", "");
+    const cleanUrl = url.replace(API_URL, "");
 
     const token = localStorage.getItem("cropmax_token");
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};

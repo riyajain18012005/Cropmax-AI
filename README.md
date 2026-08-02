@@ -95,3 +95,27 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 - **Hero Section**: Aesthetic banner displaying the pitch, key features, and dynamic mockup dashboard charts.
 - **Crop Card**: Reusable product card accepting badges, status alerts, and customized call-to-actions.
 - **Footer**: Structured platform directories, support details, and responsive social tags.
+
+---
+
+## Production Deployment
+
+CropMax AI is fully deployed and accessible on the public internet.
+
+### Live URLs
+- **Frontend App (Vercel)**: [https://cropmax-ai.vercel.app](https://cropmax-ai.vercel.app)
+- **Backend API (Render)**: [https://cropmax-ai.onrender.com](https://cropmax-ai.onrender.com)
+- **Database (Supabase / Remote MySQL)**: Hosted cloud database instance.
+
+### Tech Stack Summary
+- **Frontend**: React 19 + Next.js 16 (App Router, Turbopack)
+- **Styling**: Tailwind CSS v4.0
+- **Backend**: Node.js + Express.js REST API
+- **ORM / Database**: Prisma ORM with MySQL
+- **AI Integration**: Google Gemini / OpenAI GPT API models (handled via backend recommendations)
+
+### Known Limitations on Free Tier
+1. **Render Cold Starts**: The backend is hosted on Render's free web service tier. If there are no requests for 15 minutes, the service spins down (goes to sleep). The first request after a sleep period takes **30 to 60 seconds** to wake up the server and establish database connections.
+2. **Database Connection Limits**: The cloud database has a concurrent connection limit. Running intensive bulk operations might temporarily queue requests.
+3. **Vercel Serverless Function Limits**: Frontend server-side requests (if any) are limited to 10 seconds of execution duration on the free tier.
+
