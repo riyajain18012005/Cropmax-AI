@@ -51,7 +51,17 @@ function TypingText({ text, speed = 8, onComplete }) {
   );
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const getApiUrl = () => {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname.includes("vercel.app") || hostname.includes("cropmax-ai")) {
+      return "https://cropmax-ai.onrender.com";
+    }
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+};
+
+const API_URL = getApiUrl();
 const API_AI = `${API_URL}/api/ai/advise`;
 const API_CROPS = `${API_URL}/api/crops`;
 

@@ -11,7 +11,17 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const getApiUrl = () => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname.includes("vercel.app") || hostname.includes("cropmax-ai")) {
+        return "https://cropmax-ai.onrender.com";
+      }
+    }
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  };
+
+  const API_URL = getApiUrl();
 
   // Fetch the profile of the current logged-in user using their token
   const fetchProfile = useCallback(async (authToken) => {
